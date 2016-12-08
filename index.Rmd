@@ -284,9 +284,10 @@ To begin, we will do some preliminary analyses and examine whether or not there 
 Trump_Corpus %>%
   mutate(month = factor(month, levels = month.name)) %>%
   mutate(year = as.numeric(year)) %>%
-  group_by(month, day, year) %>%
+  group_by(month, day, year,docnumber) %>%
   count(word) %>%
   summarise(sum(n)) %>%
+  select(month, day, year, `sum(n)`) %>%
   kable(caption = "Total Word Count of Donald Trump's Speeches")
 
 Trump_Corpus %>%
@@ -312,9 +313,10 @@ There seem to be about 4 instances when Donald Trump's speeches reach or exceed 
 Clinton_Corpus %>%
   mutate(month = factor(month, levels = month.name)) %>%
   mutate(year = as.numeric(year)) %>%
-  group_by(month, day, year) %>%
+  group_by(month, day, year,docnumber) %>%
   count(word) %>%
   summarise(sum(n)) %>%
+  select(month, day, year, `sum(n)`) %>%
   kable(caption = "Total Word Count of Hillary Clinton's Speeches")
 
 Clinton_Corpus %>%
@@ -339,9 +341,10 @@ Comparatively, Hillary has about 7 speeches that approach or exceed 5,000 words,
 Sanders_Corpus %>%
   mutate(month = factor(month, levels = month.name)) %>%
   mutate(year = as.numeric(year)) %>%
-  group_by(month, day, year) %>%
+  group_by(month, day, year,docnumber) %>%
   count(word) %>%
   summarise(sum(n)) %>%
+  select(month, day, year, `sum(n)`)%>%
   kable(caption = "Total Word Count of Bernie Sander's Speeches")
 
 Sanders_Corpus %>%
@@ -365,9 +368,10 @@ With the Sander's data set, we notice a significant drop in word count with abou
 Repub_Corpus %>%
   mutate(month = factor(month, levels = month.name)) %>%
   mutate(year = as.numeric(year)) %>%
-  group_by(month, day, year) %>%
+  group_by(month, day, year,docnumber) %>%
   count(word) %>%
   summarise(sum(n)) %>%
+  select(month, day, year, `sum(n)`)%>%
   kable(caption = "Total Word Count of Other Republican Nominees' Speeches")
 
 Repub_Corpus %>%
