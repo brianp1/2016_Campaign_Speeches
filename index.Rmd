@@ -282,13 +282,11 @@ To begin, we will do some preliminary analyses and examine whether or not there 
 
 ```{r, echo=FALSE}
 Trump_Corpus %>%
-  group_by(month, day, year,docnumber) %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
   count(word) %>%
   summarise(sum(n)) %>%
-  ungroup() %>%
-    mutate(month = factor(month, levels = month.name)) %>%
-  mutate(year = as.numeric(year)) %>%
-  select(month, day, year, `sum(n)`)%>%
   kable(caption = "Total Word Count of Donald Trump's Speeches")
 
 Trump_Corpus %>%
@@ -312,13 +310,11 @@ There seem to be about 4 instances when Donald Trump's speeches reach or exceed 
 
 ```{r, echo=FALSE}
 Clinton_Corpus %>%
-  group_by(month, day, year,docnumber) %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
   count(word) %>%
   summarise(sum(n)) %>%
-  ungroup() %>%
-    mutate(month = factor(month, levels = month.name)) %>%
-  mutate(year = as.numeric(year)) %>%
-  select(month, day, year, `sum(n)`)%>%
   kable(caption = "Total Word Count of Hillary Clinton's Speeches")
 
 Clinton_Corpus %>%
@@ -341,13 +337,11 @@ Comparatively, Hillary has about 7 speeches that approach or exceed 5,000 words,
 
 ```{r, echo=FALSE}
 Sanders_Corpus %>%
-  group_by(month, day, year,docnumber) %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
   count(word) %>%
   summarise(sum(n)) %>%
-  ungroup() %>%
-    mutate(month = factor(month, levels = month.name)) %>%
-  mutate(year = as.numeric(year)) %>%
-  select(month, day, year, `sum(n)`)%>%
   kable(caption = "Total Word Count of Bernie Sander's Speeches")
 
 Sanders_Corpus %>%
@@ -369,13 +363,11 @@ With the Sander's data set, we notice a significant drop in word count with abou
   
 ```{r, echo=FALSE}
 Repub_Corpus %>%
-  group_by(month, day, year,docnumber) %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
   count(word) %>%
   summarise(sum(n)) %>%
-  ungroup() %>%
-    mutate(month = factor(month, levels = month.name)) %>%
-  mutate(year = as.numeric(year)) %>%
-  select(month, day, year, `sum(n)`)%>%
   kable(caption = "Total Word Count of Other Republican Nominees' Speeches")
 
 Repub_Corpus %>%
