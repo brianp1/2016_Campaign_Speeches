@@ -1,0 +1,211 @@
+---
+title: "Sentiment Analysis"
+author: "Brian Pennington"
+date: "December 7, 2016"
+output: html_document
+---
+#Sentimental Analysis of Candidates
+```{r, include=FALSE}
+library(tidyverse)
+library(tidytext)
+library(rvest)
+library(stringr)
+library(feather)
+library(topicmodels)
+library(knitr)
+library(SnowballC)
+library(tm)
+library(wordcloud)
+library(rmarkdown)
+library(vembedr)
+library(htmltools)
+set.seed(1234)
+```
+
+```{r,include=FALSE}
+Trump_Corpus <- read_feather("corpus/Trump_Corpus.feather")
+Clinton_Corpus <- read_feather("corpus/Clinton_Corpus.feather")
+Sanders_Corpus <- read_feather("corpus/Sanders_Corpus.feather")
+Repub_Corpus <- read_feather("corpus/Repub_Corpus.feather")
+```
+
+```{r, include=FALSE}
+speech_corpus <- bind_rows(Trump_Corpus, Clinton_Corpus, Sanders_Corpus, Repub_Corpus)
+
+speech_corpus_bing <- speech_corpus %>%
+  inner_join(get_sentiments("bing"))
+
+speech_corpus_affin <- speech_corpus %>%
+  inner_join(get_sentiments("afinn"))
+ 
+speech_corpus_nrc <- speech_corpus %>%
+  inner_join(get_sentiments("nrc"))
+```
+
+
+When we think about language, words have definitions and connotations. In sentiment analysis, we attempt examine the differences in these connotations. This may be as simple as determining if a word implies more negative thoughts and feelings or more positive ones. It may be that a word invokes particular emotions like trust or anger. So, how does it work? Thankfully, individuals have gone through large quantities of words and created sentiment dictionaries that determine this connotation around a word. By overlapping the words in those dictionaries with our corpus of words, we can assign sentiment values to our words. However, one of the problems is that the English dictionary is much larger than any sentiment dictionary. It is actually quite time consuming to go through and accurately assess a sentiment of a given word because these sentiments change and vary among people. In the process of assigning our words sentiment, we end up losing a number of our words because these sentiment dictionaries simply do not have the word. Although we do have to sacrifice some of our sample size, we do still retain tens of thousands of the words in our corpus which should be a robust sample size to provide a picture of the type of rhetoric our candidates use.
+
+
+
+```{r, echo=FALSE}
+speech_corpus_bing %>%
+  count(author, sentiment) %>%
+  mutate(percent= n/sum(n))%>%
+  ggplot(aes(author, percent, fill= author)) +
+  geom_bar(alpha = .75, stat = "identity", width = .5 )+
+  facet_grid(~sentiment)+
+  labs(x= "Speaker",
+       y= "Percentage of Text",
+       title = "Positive/Negative Percentages of Candidates' Speeches") +
+  coord_flip()
+  
+speech_corpus_bing %>%
+  count(author, sentiment) %>%
+  mutate(percent= n/sum(n)) %>%
+  kable()
+  
+```
+
+
+Starting off basic, we are simply examining the percentage of a candidates' speech either uses more words with positive connotation or more words with negative connotation. As we see, Sanders and Trump are using a higher percentage of negative words compared to Clinton and other Republican Nominees. The reason for this may be that Trump and Sanders were considered outsiders and willing to speak their minds. This may result in harsher language which may result into making a connection to those who feel disenfranchised. 
+
+
+
+
+```{r, echo=FALSE}
+speech_corpus_nrc %>%
+  count(author, sentiment) %>%
+  mutate(percent = n/sum(n)) %>%
+  ggplot(aes(sentiment, percent, fill= sentiment)) +
+  geom_bar(alpha = .8, stat = "identity")+
+  facet_wrap(~author) +
+  coord_flip()+
+  labs(x= "Percent of Word Choice", y= "Sentiment", title= "Percent of Sentiment of a Candidates' Rhetoric")
+speech_corpus_nrc %>%
+  count(author, sentiment) %>%
+  mutate(percent = n/sum(n)) %>%
+  kable()
+```
+
+
+
+We are now examining the percentage of a given sentiment within a candidates’ rhetoric. One of the first things that we notice is the similarity in shape. There are higher levels of positivity, trust, and negativity within all candidates. These three sentiments seem to make up about 40% of all rhetoric of a given candidate. However, just as nearly all of human variation is within a small percentage of our DNA, the nuance with rhetoric speaks volumes in the candidates' approach to the audience and voters. One of the glaring differences is with Clinton's higher levels of anticipation. This may provide some insight into why she was unable to reach particular sections of voters. In a way, she was expecting and talking as if she had already won the election. In addition, there is less fear and anger in her rhetoric as opposed to the other three groups especially compared to the conservatives. In looking at Donald Trump's profile, there is less words associated with trust and more words associated with negativity and fear. He also, by far, has the highest level of disgust in his word use.  
+
+
+
+The graph and table below are just another way to visualize the above data. Here we have it broken down according to sentiment.
+
+
+
+
+```{r, echo=FALSE, fig.height= 40}
+speech_corpus_nrc %>%
+  count(author, sentiment) %>%
+  mutate(percent = n/sum(n)) %>%
+  ungroup() %>%
+  group_by(sentiment) %>%
+  ggplot(aes(author, percent, fill= author)) +
+  geom_bar(stat = "identity", alpha = .85, show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free", ncol = 1) +
+  coord_flip() +
+  labs(x = "Percent of Sentiment",
+       y= "Sentiment", title= "Alternative View of Percent of Sentiment of a Candidates' Rhetoric")
+
+speech_corpus_nrc %>%
+  count(author, sentiment) %>%
+  mutate(percent = n/sum(n)) %>%
+  arrange(desc(sentiment)) %>%
+  kable()
+
+```
+
+
+
+```{r, echo=FALSE, fig.height= 25}
+speech_corpus_affin %>%
+  group_by(author, docnumber) %>%
+  mutate(numeric_sentiment = cumsum(score)) %>%
+  mutate(percent = as.integer(docnumber)) %>%
+  mutate(percent= cumsum(percent/sum(percent))) %>%
+  ggplot(aes(percent, numeric_sentiment, color = docnumber))+
+  geom_freqpoly(stat = "identity", show.legend = FALSE) +
+  facet_wrap(~author, ncol = 1) +
+  geom_line(aes(y = 75), size =2.25, linetype = 2, show.legend = FALSE) +
+  geom_line(aes(y = -75), size =2.25, linetype = 2, show.legend = FALSE)+
+  labs(x= "Percent of Document", y= "Sentiment Value", title = "Pattern of Sentiment Changes Over the Course of a Speech")
+```
+
+
+
+Here is where the analyses get a bit interesting. Along the x-axis, you have the given percentage of the document. At one, that is the aggregate sentiment over the entire document. The y-axis is the numeric value assigned to a given word and its sentiment. These graphs are tracking the pattern of a given candidate and examining how his/her sentiment changes throughout the course of a speech. The dotted lines indicate a value of +75 and -75. This means that for every four positive words, there are three negative words (+75) or that for every four negative words there are three positive words (-75). Psychologist state that you should have a five to one ratio with five positive statements to one negative if you want to maintain a healthy relationship ratio. Anything above the dotted line is regarded as strongly positive, whereas anything below the dotted line is strongly negative. In between the sections, you are essentially at a 1:1 ratio. for every positive word, it is followed by a negative one. If we examine the pattern, we see that for Hillary, it is a very steep increase in positive rhetoric. There is not a lot of data on the other conservative nominees, but we see either a gradual incline in positive rhetoric or a hovering around zero. For Bernie, half of his speeches are heavily positive and others seem to be gradually positive but remain within the dotted lines. For Trump, we see a robust patter of gradual decline for the first three-quarters of his speech with a steep transition towards positive rhetoric near the end. 
+
+
+Below is another visualization that examines the cumulative sentiment along with a table of the final values of a given document
+
+
+
+```{r, echo=FALSE}
+speech_corpus_affin %>%
+  group_by(author, docnumber) %>%
+  summarize(sum(score)) %>%
+  mutate(docnumber = order(docnumber)) %>%
+  ggplot(aes(docnumber, `sum(score)`, fill= author)) +
+  geom_bar(aes(width = .8), stat = "identity", alpha = .8, show.legend = FALSE) +
+  facet_wrap(~author) +
+  labs(x = "Document Number", y= "Sentiment Value", title = "Sentiment Value Over Documents")
+  
+speech_corpus_affin %>%
+  group_by(author, docnumber) %>%
+  summarize(sum(score)) %>%
+  mutate(docnumber = order(docnumber)) %>%
+  kable()
+```
+
+
+
+```{r, echo=FALSE,fig.height= 25}
+speech_corpus_bing %>%
+  mutate(score = ifelse(sentiment == "positive", 1,
+                  ifelse(sentiment == "negative", -1, NA))) %>%
+  group_by(author, docnumber) %>%
+  mutate(numeric_sentiment = cumsum(score)) %>%
+  mutate(percent = as.integer(docnumber)) %>%
+  mutate(percent= cumsum(percent/sum(percent))) %>%
+  ggplot(aes(percent, numeric_sentiment, color = docnumber))+
+  geom_freqpoly(stat = "identity", show.legend = FALSE) +
+  facet_wrap(~author, ncol = 1) +
+    labs(x= "Percent of Document", y= "Sentiment Value", title = "Pattern of Sentiment Changes Over the Course of a Speech")
+
+```
+
+
+
+As previously, stated these sentiment dictionaires can be quite subjective, so we deicded to use a separate dictionary in order to examine the pattern of sentiment change over the course of the document, and what we see is roghly the same exact pattern. 
+
+
+
+```{r, echo=FALSE, fig.height= 35}
+speech_corpus_nrc %>%
+  filter(year == "2016") %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  count(author, sentiment, month) %>%
+  ungroup() %>%
+  group_by(author, month) %>%
+  mutate(percent = n/sum(n)) %>%
+  ggplot(aes(month, percent, fill = author)) +
+  geom_bar(stat = "identity", alpha = .8, position = "dodge", aes(width = .75)) +
+  facet_wrap(~sentiment, ncol = 1)+
+   theme(axis.text.x = element_text(angle = 90)) +
+  labs(x= "Month", y= "Percent of Sentiment", title= "change of Sentiment Over Time (Year 2016)")
+
+speech_corpus_nrc %>%
+  filter(year == "2016") %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  count(author, sentiment, month) %>%
+  ungroup() %>%
+  group_by(author, month) %>%
+  mutate(percent = n/sum(n)) %>%
+  kable()
+```
+
+To round out our analysis of sentiment, we now take a look at the changes of sentiment over the course of 2016. It seems that certain emotions seem to be consistent throughout the year, primarily fear and sadness. There seems to be a general increase in negativity and disgust as the campaign progresses, but for the most part it seems that the sentiment at the beginning of the year changes slightly through the middle of the year and then returns to same value as the beginning of the year with the final push in the campaign and the election coming to a close.

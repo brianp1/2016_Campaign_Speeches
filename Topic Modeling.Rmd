@@ -1,0 +1,496 @@
+---
+title: "Topic Modeling"
+author: "Brian Pennington"
+date: "December 7, 2016"
+output: html_document
+---
+#Topic Modeling of Candidates
+```{r, include=FALSE}
+library(tidyverse)
+library(tidytext)
+library(rvest)
+library(stringr)
+library(feather)
+library(topicmodels)
+library(knitr)
+library(SnowballC)
+library(tm)
+library(wordcloud)
+library(rmarkdown)
+library(vembedr)
+library(htmltools)
+set.seed(1234)
+```
+
+```{r,include=FALSE}
+Trump_Corpus <- read_feather("corpus/Trump_Corpus.feather")
+Clinton_Corpus <- read_feather("corpus/Clinton_Corpus.feather")
+Sanders_Corpus <- read_feather("corpus/Sanders_Corpus.feather")
+Repub_Corpus <- read_feather("corpus/Repub_Corpus.feather")
+
+speech_corpus <- bind_rows(Trump_Corpus, Clinton_Corpus, Sanders_Corpus, Repub_Corpus)
+
+mystopwords2 <- data_frame(word = c("texas", "smith", "cooper", "tianna", "barbara", "freia", "ruline", "miami", "reid", "caroline", "smith", "netanyahu", "michael", "gordon", "gordy", "sharansky", "don't", "that's", "they're", "we're", "mcdowell", "steve", "milwaukee", "maine", "jackson", "indiana", "iowa", "september", "dr", "al", "gabby", "jack", "ben", "vermont", "people", "cheers"))
+mystopwords2 <- bind_rows(stop_words, mystopwords2)
+```
+
+
+In addition to understanding sentiment surrounding a word, we can also examine the different topics and issues candidates tend to focus on within their campaign speeches. There are different ways in which we can analyze topics. We could simply look at frequency of words and derive a general idea of what candidate may be talking about. We can also examine the frequency with which particular words tend to be associated with one another. From these clusters, we can examine which words are highly correlated with one another and derive topics from these highly clustered words.
+
+
+
+##General Topics from the 2016 Election
+
+```{r, echo=FALSE, warning=FALSE}
+word_cloud <- speech_corpus %>%
+  select(word) %>%
+  filter(word != "applause") %>%
+  anti_join(mystopwords2)%>%
+  count(word) 
+wordcloud(words = word_cloud$word, freq = word_cloud$n, min.freq = 2, 
+          max.words = 200, random.order = FALSE, rot.per = 0.5, 
+          color=brewer.pal(6, "Dark2"))
+```
+
+
+Here we have our first word cloud. This examines the frequency of words and the more frequently a word occurs, the larger it is in the cloud. We see words related to the American ideal with family, future, jobs, nation, and we see words related to the election with president, world, government, and vote.  
+
+
+```{r, include=FALSE}
+speech_td <- speech_corpus %>%
+  group_by(author, docnumber) %>%
+  filter(word != "applause") %>%
+  count(word) %>%
+  select(author, word, n, docnumber) %>%
+  mutate(docid = paste0(author, docnumber)) %>%
+  anti_join(mystopwords2)
+speech_td
+
+
+speech_dtm <- speech_td %>%
+  cast_dtm(term = word,value = n, document = docid)
+speech_dtm 
+
+speech_lda <- LDA(speech_dtm, k = 4, control = list())
+speech_lda
+
+speech_lda_td <- tidy(speech_lda)
+top_terms <- speech_lda_td %>%
+  group_by(topic) %>%
+  top_n(8, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+```
+
+```{r, echo=FALSE}
+
+top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic)))+
+    geom_bar(stat= "identity", show.legend = FALSE)+
+    facet_wrap(~topic, scales = "free")+
+    coord_flip()+
+  labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Entire Campaign")
+
+
+top_terms %>%
+  kable()
+```
+
+
+
+We decided to start with assuming that there were only 4 topics from which campaign revolved around. 
+Topic 1: Campaign topic with vote, election, and president.
+Topic 2: This second topic seems to be creating a sense of ingroup for Americans
+Topic 3: This seems to refer to the American Ideals of family and hard work
+Topic 4: America's economy within an international frameworrk
+
+
+```{r, echo=FALSE}
+n_topics <- c(2, 3, 4, 5, 10, 15, 25, 50)
+perplexity_comp <- n_topics %>%
+  map(LDA, x = speech_dtm, control = list())
+data_frame(k = n_topics,
+           perplex = map_dbl(perplexity_comp, perplexity)) %>%
+  ggplot(aes(k, perplex)) +
+  geom_point() +
+  geom_line() +
+  labs(x= "Number of Potential Topics", y= "Perplexity Score", title= "Model Testing for Entire Campaign")
+```
+
+
+
+We can test to see how the accuracy of using four models is compared to using a number of other models. With this tool of perplexity, we can determine what the ideal number of topics it is that we should use. The lower the perplexity score, the more accurate our model will be. From this, we can determine that 15 is much more accurate than 4 while also not being completely overwhelming in trying to determine what the topics actually are. 
+
+
+
+```{r, include=FALSE}
+speech_lda2 <- LDA(speech_dtm, k = 15, control = list())
+speech_lda
+
+speech_lda_td2 <- tidy(speech_lda2)
+
+top_terms2 <- speech_lda_td2 %>%
+   group_by(topic) %>%
+  top_n(5, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+```
+
+```{r, echo=FALSE}
+top_terms2 %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic)))+
+  geom_bar(stat= "identity", show.legend = FALSE)+
+  facet_wrap(~topic, scales = "free", ncol = 3)+
+  coord_flip()+
+  labs(x= "beta", y= "Terms within Topics", title= "Adjusted Topic Model for Entire Campaign")
+
+
+top_terms2 %>%
+  kable()
+
+perplexity(speech_lda2)
+```
+
+
+
+Topic 1: Jobs and the Economy
+Topic 2: Future and the Children
+Topic 3: Educational Opportunity
+Topic 4: American Jobs
+Topic 5: Israel and Foreign Policy
+Topic 6: Election
+Topic 7: Economy and Taxes
+Topic 8: Healthcare
+Topic 9: Election
+Topic 10: Wall Street
+...
+Topic 15: Terrorism
+
+Now, due to the asymmetry in campaign speeches that we pulled from, Donald Trump's topics dominate due to the sheer number of speeches compared to the other 3 groups. To counter this, we examine the inverse document frequency which places more value on words used less frequently. The idea is to find an optimal balance between use and weight.
+
+
+
+```{r, include=FALSE}
+inverse_doc_freq <- speech_td %>%
+  bind_tf_idf(word, docid, n) %>%
+  arrange(desc(tf_idf)) %>%
+  mutate(word = factor(word, levels = rev(unique(word))))
+```
+```{r, echo=FALSE}
+ggplot(inverse_doc_freq[1:25,], aes(word, tf_idf, fill = author)) +
+  geom_bar(alpha = 0.8, stat = "identity", scales = "free") +
+  coord_flip()+
+  labs(y="Weighted Percentage", x= "Word", title= "Top 25 Inverse Term Frequency Words from 2016 Presidential Campaign")
+```
+
+
+
+This graph shows us the highest weight words based upon use and weight. The large term that seems to emerge is Israel, but you can see how each candidate has certain words seem to be important from their speeches. To better flush out individual candidates inverse term frequency words, we can examine the graph below.
+
+
+
+```{r, echo=FALSE}
+inverse_doc_freq %>%
+  group_by(author) %>%
+  top_n(15)%>%
+  ungroup() %>%
+  ggplot(aes(word, tf_idf, fill = author)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~author, scales = "free") +
+  coord_flip()
+```
+
+
+We can now better examine these different ideas that seem to be hidden, yet important in the candidates' speeches. These are the words with importance, yet they may not be used as frequently as American or President.
+
+With these ideas and tools, we can now model each of the candidates' topic separately to get a better grasp at the policy and issues that are important to them
+
+
+##Topic Modeling For Donald Trump
+```{r, echo=FALSE, warning=FALSE}
+Trump_word_cloud <- Trump_Corpus %>%
+  select(word) %>%
+  filter(word != "applause") %>%
+  anti_join(mystopwords2)%>%
+  count(word) 
+wordcloud(words = Trump_word_cloud$word, freq = Trump_word_cloud$n, min.freq = 2, 
+          max.words = 200, random.order = FALSE, rot.per = 0.15, 
+          color=brewer.pal(6, "Dark2"))
+```
+
+```{r, include=FALSE}
+Trump_td <- Trump_Corpus %>%
+  group_by(docnumber) %>%
+  filter(word != "applause") %>%
+  count(word) %>%
+  select(word, n, docnumber)
+Trump_td
+
+Trump_dtm <- Trump_td %>%
+  anti_join(mystopwords2) %>%
+  cast_dtm(term = word,value = n, document = docnumber)
+Trump_dtm 
+
+n_topics <- c(2, 3, 4, 5, 10, 15, 25, 50)
+```
+
+
+```{r, echo=FALSE}
+Trump_comp <- n_topics %>%
+  map(LDA, x = Trump_dtm, control = list())
+data_frame(k = n_topics,
+           perplex = map_dbl(Trump_comp, perplexity)) %>%
+  ggplot(aes(k, perplex)) +
+  geom_point() +
+  geom_line()+
+  labs(x= "Number of Potential Topics", y= "Perplexity Score", title= "Model Testing for Donald Trump")
+```
+
+```{r, include=FALSE}
+trump_lda <- LDA(Trump_dtm, k = 15, control = list())
+
+
+trump_lda_td <- tidy(trump_lda)
+trump_terms <- trump_lda_td %>%
+  group_by(topic) %>%
+  top_n(7, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+```
+
+
+```{r, echo=FALSE}
+trump_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic)))+
+  geom_bar(stat= "identity", show.legend = FALSE)+
+  facet_wrap(~topic, scales = "free", ncol = 3)+
+  coord_flip()+
+  labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Donald Trump")
+
+trump_terms %>%
+  kable()
+  
+
+perplexity(speech_lda)
+```
+
+
+##Topic Modeling For Hillary Clinton
+```{r, echo=FALSE, warning=FALSE}
+clinton_word_cloud <- Clinton_Corpus %>%
+  select(word) %>%
+  filter(word != "applause") %>%
+  anti_join(mystopwords2)%>%
+  count(word) 
+wordcloud(words = clinton_word_cloud$word, freq = clinton_word_cloud$n, min.freq = 2, 
+          max.words = 200, random.order = FALSE, rot.per = 0.15, 
+          color=brewer.pal(6, "Dark2"))
+```
+
+
+
+```{r, include=FALSE}
+Clinton_td <- Clinton_Corpus %>%
+  group_by(docnumber) %>%
+  filter(word != "applause") %>%
+  count(word) %>%
+  select(word, n, docnumber)
+Clinton_td
+
+Clinton_dtm <- Clinton_td %>%
+  anti_join(mystopwords2) %>%
+  cast_dtm(term = word,value = n, document = docnumber)
+Clinton_dtm 
+
+n_topics <- c(2, 3, 4, 5, 10, 15, 25, 50)
+```
+
+```{r, echo=FALSE}
+Clinton_comp <- n_topics %>%
+  map(LDA, x = Clinton_dtm, control = list())
+data_frame(k = n_topics,
+           perplex = map_dbl(Clinton_comp, perplexity)) %>%
+  ggplot(aes(k, perplex)) +
+  geom_point() +
+  geom_line()+
+  labs(x= "Number of Potential Topics", y= "Perplexity Score", title= "Model Testing for Hillary Clinton")
+```
+
+
+```{r, include=FALSE}
+clinton_lda <- LDA(Clinton_dtm, k = 15, control = list())
+clinton_lda
+
+clinton_lda_td <- tidy(clinton_lda)
+
+clinton_terms <- clinton_lda_td %>%
+  group_by(topic) %>%
+  top_n(7, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+```
+
+
+
+```{r, echo=FALSE}
+clinton_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic)))+
+  geom_bar(stat= "identity", show.legend = FALSE)+
+  facet_wrap(~topic, scales = "free", ncol = 3)+
+  coord_flip()+
+  labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Hillary Clinton")
+
+clinton_terms %>%
+  kable()
+
+perplexity(clinton_lda)
+```
+
+##Topic Modeling For Bernie Sanders
+```{r, echo=FALSE, warning=FALSE}
+sanders_word_cloud <- Sanders_Corpus %>%
+  select(word) %>%
+  filter(word != "applause") %>%
+  anti_join(mystopwords2)%>%
+  count(word) 
+wordcloud(words = sanders_word_cloud$word, freq = sanders_word_cloud$n, min.freq = 2, 
+          max.words = 200, random.order = FALSE, rot.per = 0.35, 
+          color=brewer.pal(6, "Dark2"))
+```
+
+
+
+```{r, include=FALSE}
+Sanders_td <- Sanders_Corpus %>%
+  group_by(docnumber) %>%
+  filter(word != "applause") %>%
+  count(word) %>%
+  select(word, n, docnumber)
+Sanders_td
+
+Sanders_dtm <- Sanders_td %>%
+  anti_join(mystopwords2) %>%
+  cast_dtm(term = word,value = n, document = docnumber)
+Sanders_dtm 
+
+n_topics <- c(2, 3, 4, 5, 10, 15, 25, 50)
+```
+
+
+```{r, echo=FALSE}
+Sanders_comp <- n_topics %>%
+  map(LDA, x = Sanders_dtm, control = list())
+data_frame(k = n_topics,
+           perplex = map_dbl(Sanders_comp, perplexity)) %>%
+  ggplot(aes(k, perplex)) +
+  geom_point() +
+  geom_line()+
+  labs(x= "Number of Potential Topics", y= "Perplexity Score", title= "Model Testing for Bernie Sanders")
+```
+
+
+```{r, include=FALSE}
+sanders_lda <- LDA(Sanders_dtm, k = 15, control = list())
+sanders_lda
+
+sanders_lda_td <- tidy(sanders_lda)
+
+sanders_terms <- sanders_lda_td %>%
+  group_by(topic) %>%
+  top_n(7, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+```
+
+
+```{r, echo=FALSE}
+sanders_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic)))+
+  geom_bar(stat= "identity", show.legend = FALSE)+
+  facet_wrap(~topic, scales = "free", ncol = 3)+
+  coord_flip()+
+  labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Bernie Sanders")
+
+sanders_terms %>%
+  kable()
+
+perplexity(sanders_lda)
+```
+
+##Topic Modeling for Other Republican Nominees
+```{r, echo=FALSE, warning=FALSE}
+repub_word_cloud <- Repub_Corpus %>%
+  select(word) %>%
+  filter(word != "applause") %>%
+  anti_join(mystopwords2)%>%
+  count(word) 
+wordcloud(words = repub_word_cloud$word, freq = repub_word_cloud$n, min.freq = 2, 
+          max.words = 200, random.order = FALSE, rot.per = 0.35, 
+          color=brewer.pal(6, "Dark2"))
+```
+
+
+```{r, include=FALSE}
+Repub_td <- Repub_Corpus %>%
+  group_by(docnumber) %>%
+  filter(word != "applause") %>%
+  count(word) %>%
+  select(word, n, docnumber)
+Repub_td
+
+Repub_dtm <- Repub_td %>%
+  anti_join(mystopwords2) %>%
+  cast_dtm(term = word,value = n, document = docnumber)
+Repub_dtm 
+
+n_topics <- c(2, 3, 4, 5, 10, 15, 25, 50)
+```
+
+
+```{r, echo=FALSE}
+Repub_comp <- n_topics %>%
+  map(LDA, x = Repub_dtm, control = list())
+data_frame(k = n_topics,
+           perplex = map_dbl(Repub_comp, perplexity)) %>%
+  ggplot(aes(k, perplex)) +
+  geom_point() +
+  geom_line()+
+  labs(x= "Number of Potential Topics", y= "Perplexity Score", title= "Model Testing for Other Republican Nominees")
+```
+
+
+
+```{r, include=FALSE}
+repub_lda <- LDA(Repub_dtm, k = 10, control = list())
+repub_lda
+
+repub_lda_td <- tidy(repub_lda)
+
+repub_terms <- repub_lda_td %>%
+  group_by(topic) %>%
+  top_n(15, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+```
+
+
+```{r, echo=FALSE}
+repub_terms%>%
+  mutate(term = reorder(term, beta)) %>%
+  ggplot(aes(term, beta, fill = factor(topic)))+
+  geom_bar(stat= "identity", show.legend = FALSE)+
+  facet_wrap(~topic, scales = "free")+
+  coord_flip()+
+  labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Other Republican Nominees")
+
+repub_terms %>%
+  kable()
+
+perplexity(repub_lda)
+```
