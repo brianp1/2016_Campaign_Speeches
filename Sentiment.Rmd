@@ -182,7 +182,7 @@ As previously, stated these sentiment dictionaires can be quite subjective, so w
 
 
 
-```{r, echo=FALSE, fig.height= 35}
+```{r, echo=FALSE, fig.height= 35, warning= FALSE}
 speech_corpus_nrc %>%
   filter(year == "2016") %>%
   mutate(month = factor(month, levels = month.name)) %>%

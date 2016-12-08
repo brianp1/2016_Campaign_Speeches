@@ -273,9 +273,13 @@ Repub_Corpus <- Repub_Corpus %>%
 
 write_feather(Repub_Corpus, "corpus/Repub_Corpus.feather")
 ```
+
+
 ##Word Count
 
 To begin, we will do some preliminary analyses and examine whether or not there are any fundamental differences between candidates.
+
+
 ```{r, echo=FALSE}
 Trump_Corpus %>%
   mutate(month = factor(month, levels = month.name)) %>%
@@ -298,7 +302,12 @@ Trump_Corpus %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(x= "Date of Speech", y = "Total Number of Words", title = "Frequency Distribution of Donald Trump's Speeches")
 ```
+
+
 There seem to be about 4 instances when Donald Trump's speeches reach or exceed 5,000 words. 5,000 words is about the size of a 20-page document. In addition, it is important to notice that the darker shaded lines are other speeches that he gave on the same day. There are about 12 days in which we gave two separate speeches.
+
+
+
 ```{r, echo=FALSE}
 Clinton_Corpus %>%
   mutate(month = factor(month, levels = month.name)) %>%
@@ -321,6 +330,8 @@ Clinton_Corpus %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(x= "Date of Speech", y = "Total Number of Words", title = "Frequency Distribution of Hillary Clinton's Speeches")
 ```
+
+
 Comparatively, Hillary has about 7 speeches that approach or exceed 5,000 words, and she only has 4 instances of more than a single speech on a given day. From this, we can start to see that Hillary speaks for longer, whereas Trump speaks at more events. From here, we could perform a single t-test on the differences in average word count to see if there was a statistical significance. 
 
 
@@ -346,6 +357,8 @@ Sanders_Corpus %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(x= "Date of Speech", y = "Total Number of Words", title = "Frequency Distribution of Bernie Sander's Speeches")
 ```
+
+
 With the Sander's data set, we notice a significant drop in word count with about three outliers. We also see that he has zero instances of multiple speeches on a given day.   
   
 ```{r, echo=FALSE}
@@ -383,6 +396,8 @@ read_feather("corpus/Repub_Corpus.feather")
 
 speech_corpus <- bind_rows(Trump_Corpus, Clinton_Corpus, Sanders_Corpus, Repub_Corpus)
 ```
+
+
 ##Celebratory Pauses
 
 Within the documents, there were instances of applause or chanting, so in the table below, we have the number of instances these occur within the speeches.
@@ -394,6 +409,8 @@ speech_corpus %>%
   count() %>%
   kable()
 ```
+
+
 As stated previously, there may be instance of selection bias, and this may be one of those instances. Different scribes may have used different standards in tracking and reporting crowd behavior. However, with the results we do have, Sanders has a number of these celebratory pauses especially for the number of speeches he gave. This could be an indicator of how he was able to relate to his audience. Clinton and Trump seem to have similar numbers for the respective amount of speeches they gave. We have no data on the other Republican candidates due to the small sample size. 
 
 
@@ -407,12 +424,16 @@ speech_corpus %>%
   geom_bar(stat = "identity", alpha = .8, position = "dodge") +
   labs(x= "Instance of Celebratory Pause", y= "Number of Celebratory Pauses", title = "Celebratory Pauses Between Candidates")
 ```
+
+
 This graph shows us that there are not equal distributions among cheering. We do see that Clinton has more instances of cheering, whereas Trump and Sanders seem to have very dense instances of cheering. This either confirms the idea of selection bias pertaining to cheering, or it could be indicative of a variety of speech style that the candidates were able to use in order to elicit high energy response. We must also take into account the disruptions that would occur at Trump rallies, yet there were never instances of 10, 20, let along 50 individual disruptions at a given rally.
 
 
 ##Word Size
 
 Now, we can begin to break down the individual words that candidates used. This table provides percentage and number of words of a given size by each candidate. 
+
+
 ```{r, echo=FALSE}
 size <- speech_corpus %>%
   mutate(word_szie = nchar(word)) %>%
@@ -423,10 +444,14 @@ size <- speech_corpus %>%
 ```
 
 Below is the graph for an easier visualization:
+
+
 ```{r, echo=FALSE}
 size %>%
   ggplot(aes(word_szie, percent, fill= author)) +
   geom_bar(stat = "identity") +
   facet_wrap(~author)
 ```
+
+
 In terms of size, there is no real difference. It is interesting to visualize, but for the most part, we seem to use words with 3, 4, and 5 letters, and campaign speeches are no different. This may be in an attempt to relate and come across to the everyday-man, but it is also just the structure of our language.
