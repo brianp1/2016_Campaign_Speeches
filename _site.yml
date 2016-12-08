@@ -1,9 +1,14 @@
-name: "my-website"
+name: "Textual Analysis of the 2016 Presidential Campaign Speeches"
 output_dir: "."
 navbar:
-  title: "My Website"
+  title: "I Know Words, I Have The Best Words"
   left:
     - text: "Home"
       href: index.html
-    - text: "About"
+    - text: "Sentiment Analysis"
+      href: Sentiment.html
+    - text: "Topic Modeling"
+      href: Topic_Modeling.html
+    - text: "Conclusions"
       href: about.html
+

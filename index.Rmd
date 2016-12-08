@@ -1,5 +1,432 @@
 ---
-title: "My Website"
+title: "I Know Words, I Have The Best Words"
+subtitle: "Textual Analysis of the 2016 Presidential Campaign Speeches: An Exploratory Analysis by Brian Pennington"
 ---
+```{r, include=FALSE}
+library(tidyverse)
+library(tidytext)
+library(rvest)
+library(stringr)
+library(feather)
+library(topicmodels)
+library(knitr)
+library(SnowballC)
+library(tm)
+library(wordcloud)
+library(rmarkdown)
+library(vembedr)
+library(htmltools)
+set.seed(1234)
+```
 
-Hello, Website!
+```{r, echo=FALSE}
+div(align = "center", embed_youtube(id= "7UIE_MRAhEA"))
+```
+
+When Donald Trump won the election on November 8th, technically November 9th, many individuals found themselves shocked and speechless. Time and time again, this particular candidate stepped away from comments, actions, and scandals that would otherwise have condemned other politicians to political suicide. From his opening speech to his closing remarks, Donald Trump seemed to be an unstoppable whirlwind of decisive speech. The question becomes how was Donald Trump's rhetoric different yet crucial to his victory in the 2016 Presidential election. 
+  
+The appearance of the President has been crucial throughout America's history from early President's image of statesmen and dignitaries to JFK's appearance and defeat of Richard Nixon in the first ever televised debate. A crucial component to the image of the Presidency are the words spoken, the rhetoric used, and the issues the candidates focus on. The speeches and debates offer the voting public a means in which to sift through policy intentions and past accomplishments in order to get at the quality and character of each candidate. This is one of the reasons that over the years’ politicians have perfected the polished image and memorized the perfect speeches. However, there is a component of uncertainty when a candidate steps onto a stage or into the public eye. In the spotlight, the candidate the craft themselves in whatever manner they wish to. It is when a candidate shifts from the prepared speeches that he/she truly connects with the voter and make a lasting impression. Therefore, a candidate giving a speech must walk the line between professional and charismatic, and it is through the analysis of these campaign speeches that we can begin to break down the differences and similarities within candidates, in hopes of peaking behind the curtain and uncovering how rhetoric, and in this case sentiment and topics, play a role in defining a candidate and potentially answering the question of to what extend rhetoric is important in determining elections. 
+  
+#Methods
+For this project, I scrapped Presidential campaign speeches from the summer of 2015 all the way to the night before the election (November 2016). I was able to collect 57 speeches from Donald Trump, 35 from Hillary Clinton, 16 from Bernie Sanders, and 6 from the three prominent Republican Nominees (John Kasich, Marco Rubio, & Ted Cruz). There are more speeches from Trump and Clinton due to their campaigns running the entire 15 months, whereas the other candidates lost in the primaries and ended their campaigns in the Summer of 2016. This asymmetry in speeches may decrease the generalizability of our findings. I also attempted to avoid interviews seeing as it would be challenging to parse between the speakers. In this data collection process, there may have been potential for selection bias towards particular candidates’ speeches, however, I did not come across any explicit selection bias in scrapping the data. The total corpus ended up consisting of 336,903 words.
+
+#Basic Analyses
+
+##
+
+```{r, include=FALSE}
+get_Trump_speeches <- function(x){
+  text_url = str_c("http://www.presidency.ucsb.edu/ws/index.php?pid=", x)
+
+  df1 <- read_html(text_url) %>%
+    html_nodes("p") %>%
+    html_text()
+  
+  df2 <- read_html(text_url)%>%
+    html_node(".docdate")%>%
+    html_text()
+  
+  
+  speech <- data_frame(text = df1) %>%
+    mutate(author = "Trump",
+           parnumber = row_number(),
+           date = df2) %>%
+    separate(date, into = c("date2", "year"), sep = ",") %>%
+    separate(date2, into = c("month", "day"), sep = " ")
+  speech <- unnest_tokens(speech, word, text, token = "words")  
+  return(speech)
+}  
+
+x = c(
+  "119182",  
+  "119181",
+  "119188",
+  "119187",
+  "119186",  
+  "119185",  
+  "119184",  
+  "119183",
+  "119174",
+  "119172",  
+  "119180",  
+  "119173",  
+  "119170",  
+  "119169",  
+  "119168",  
+  "119167",  
+  "119166",  
+  "119179",  
+  "119202",  
+  "119201",  
+  "119200",  
+  "119203",  
+  "119191",  
+  "119189",  
+  "119192",  
+  "119207",  
+  "119208",  
+  "119209", 
+  "119190",  
+  "119206",  
+  "119206",  
+  "119193",  
+  "119205",  
+  "119178",  
+  "119204",  
+  "119194",  
+  "119195",  
+  "119177",  
+  "119197",  
+  "119199",  
+  "119198",  
+  "119196",  
+  '119176',  
+  "119175",  
+  "119165",  
+  "119503",  
+  "117935",  
+  "117791",  
+  "117815",  
+  "117790",  
+  "117775",  
+  "117813",  
+  "116597",
+  "110306")
+
+Trump_Corpus <- map_df(x, get_Trump_speeches, .id = "docnumber")
+Trump_Corpus <- Trump_Corpus%>%
+  mutate(year = str_trim(year))
+
+
+write_feather(Trump_Corpus, "corpus/Trump_Corpus.feather")
+```
+
+```{r, include=FALSE}
+get_Clinton_speeches <- function(x){
+  text_url = str_c("http://www.presidency.ucsb.edu/ws/index.php?pid=", x)
+  
+  df1 <- read_html(text_url) %>%
+    html_nodes("p") %>%
+    html_text()
+  
+  df2 <- read_html(text_url)%>%
+    html_node(".docdate")%>%
+    html_text()
+  
+  
+  speech <- data_frame(text = df1) %>%
+    mutate(author = "Clinton",
+           parnumber = row_number(),
+           date = df2) %>%
+    separate(date, into = c("date2", "year"), sep = ",") %>%
+    separate(date2, into = c("month", "day"), sep = " ")
+  speech <- unnest_tokens(speech, word, text, token = "words")  
+  return(speech)
+}
+
+
+h <- c("119498",
+       "119502",
+       "119501",
+       "119500",
+       "119499",
+       "119497",
+       "119157",
+       "119156",
+       "119155",
+       "119154",
+       "119153",
+       "119152",
+       "119151",
+       "119150",
+       "119149",
+       "119164",
+       "119163",
+       "119162",
+       "119161",
+       "119160",
+       "119159",
+       "119158",
+       "119148",
+       "118051",
+       "119295",
+       "116600",
+       "111596",
+       "111439",
+       "111414",
+       "111415",
+       "119292",
+       "111418",
+       "111419",
+       "110267",
+       "110269",
+       "110268")
+
+Clinton_Corpus <- map_df(h, get_Clinton_speeches, .id = "docnumber")
+Clinton_Corpus <- Clinton_Corpus %>%
+  mutate(year = str_trim(year))
+write_feather(Clinton_Corpus, "corpus/Clinton_Corpus.feather")
+```
+
+```{r, include=FALSE}
+get_Sanders_speeches <- function(x){
+  text_url = str_c("http://www.presidency.ucsb.edu/ws/index.php?pid=", x)
+  
+  df1 <- read_html(text_url) %>%
+    html_nodes("p") %>%
+    html_text()
+  
+  df2 <- read_html(text_url)%>%
+    html_node(".docdate")%>%
+    html_text()
+  
+  
+  speech <- data_frame(text = df1) %>%
+    mutate(author = "Sanders",
+           parnumber = row_number(),
+           date = df2) %>%
+    separate(date, into = c("date2", "year"), sep = ",") %>%
+    separate(date2, into = c("month", "day"), sep = " ")
+  speech <- unnest_tokens(speech, word, text, token = "words")  
+  return(speech)
+}  
+
+s <- c("118045", 
+       "117194", 
+       "117513", 
+       "116694", 
+       "117516", 
+       "117511", 
+       "111440", 
+       "117514", 
+       "117512", 
+       "114496", 
+       "114487", 
+       "117517", 
+       "114493", 
+       "114491", 
+       "114486", 
+       "114488", 
+       "114494") 
+
+Sanders_Corpus <- map_df(s,get_Sanders_speeches, .id = "docnumber")
+Sanders_Corpus <- Sanders_Corpus %>%
+  mutate(year = str_trim(year))
+write_feather(Sanders_Corpus, "corpus/Sanders_Corpus.feather")
+```
+
+```{r, include=FALSE}
+get_Repub_speeches <- function(x){
+  text_url = str_c("http://www.presidency.ucsb.edu/ws/index.php?pid=", x)
+  
+  df1 <- read_html(text_url) %>%
+    html_nodes("p") %>%
+    html_text()
+  
+  df2 <- read_html(text_url)%>%
+    html_node(".docdate")%>%
+    html_text()
+  
+  
+  speech <- data_frame(text = df1) %>%
+    mutate(author = "Cruz/Kasich/Rubio",
+           parnumber = row_number(),
+           date = df2) %>%
+    separate(date, into = c("date2", "year"), sep = ",") %>%
+    separate(date2, into = c("month", "day"), sep = " ")
+  speech <- unnest_tokens(speech, word, text, token = "words")  
+  return(speech)
+}  
+
+r <- c("118041",
+       "117232",
+       "116598",
+       "114768",
+       "111441",
+       "116599",
+       "113069")
+
+Repub_Corpus <- map_df(r, get_Repub_speeches, .id = "docnumber")
+
+Repub_Corpus <- Repub_Corpus %>%
+  mutate(year = str_trim(year))
+
+write_feather(Repub_Corpus, "corpus/Repub_Corpus.feather")
+```
+##Word Count
+
+To begin, we will do some preliminary analyses and examine whether or not there are any fundamental differences between candidates.
+```{r, echo=FALSE}
+Trump_Corpus %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  kable(caption = "Total Word Count of Donald Trump's Speeches")
+
+Trump_Corpus %>%
+  unite(date, month, day, sep = " ") %>%
+  unite(date, date, year, sep = ", ") %>%
+  mutate(date = as.Date(date, format = "%B %d, %Y")) %>%
+  mutate(date = format(date, format = "%Y/%m/%d")) %>%
+  group_by(date, docnumber) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  ggplot(aes(date, `sum(n)`, fill = docnumber)) +
+  geom_bar(stat = "identity", alpha = .8, position = "dodge", show.legend = FALSE, fill = "tomato2") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x= "Date of Speech", y = "Total Number of Words", title = "Frequency Distribution of Donald Trump's Speeches")
+```
+There seem to be about 4 instances when Donald Trump's speeches reach or exceed 5,000 words. 5,000 words is about the size of a 20-page document. In addition, it is important to notice that the darker shaded lines are other speeches that he gave on the same day. There are about 12 days in which we gave two separate speeches.
+```{r, echo=FALSE}
+Clinton_Corpus %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  kable(caption = "Total Word Count of Hillary Clinton's Speeches")
+
+Clinton_Corpus %>%
+  unite(date, month, day, sep = " ") %>%
+  unite(date, date, year, sep = ", ") %>%
+  mutate(date = as.Date(date, format = "%B %d, %Y")) %>%
+  mutate(date = format(date, format = "%Y/%m/%d")) %>%
+  group_by(date, docnumber) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  ggplot(aes(date, `sum(n)`, fill = docnumber)) +
+  geom_bar(stat = "identity", alpha = .8, position = "dodge", show.legend = FALSE, fill ="steelblue")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x= "Date of Speech", y = "Total Number of Words", title = "Frequency Distribution of Hillary Clinton's Speeches")
+```
+Comparatively, Hillary has about 7 speeches that approach or exceed 5,000 words, and she only has 4 instances of more than a single speech on a given day. From this, we can start to see that Hillary speaks for longer, whereas Trump speaks at more events. From here, we could perform a single t-test on the differences in average word count to see if there was a statistical significance. 
+
+
+```{r, echo=FALSE}
+Sanders_Corpus %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  kable(caption = "Total Word Count of Bernie Sander's Speeches")
+
+Sanders_Corpus %>%
+  unite(date, month, day, sep = " ") %>%
+  unite(date, date, year, sep = ", ") %>%
+  mutate(date = as.Date(date, format = "%B %d, %Y")) %>%
+  mutate(date = format(date, format = "%Y/%m/%d")) %>%
+  group_by(date, docnumber) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  ggplot(aes(date, `sum(n)`, fill = docnumber)) +
+  geom_bar(fill = "steelblue", stat = "identity", alpha = .8, position = "dodge", show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x= "Date of Speech", y = "Total Number of Words", title = "Frequency Distribution of Bernie Sander's Speeches")
+```
+With the Sander's data set, we notice a significant drop in word count with about three outliers. We also see that he has zero instances of multiple speeches on a given day.   
+  
+```{r, echo=FALSE}
+Repub_Corpus %>%
+  mutate(month = factor(month, levels = month.name)) %>%
+  mutate(year = as.numeric(year)) %>%
+  group_by(month, day, year) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  kable(caption = "Total Word Count of Other Republican Nominees' Speeches")
+
+Repub_Corpus %>%
+  unite(date, month, day, sep = " ") %>%
+  unite(date, date, year, sep = ", ") %>%
+  mutate(date = as.Date(date, format = "%B %d, %Y")) %>%
+  mutate(date = format(date, format = "%Y/%m/%d")) %>%
+  group_by(date, docnumber) %>%
+  count(word) %>%
+  summarise(sum(n)) %>%
+  ggplot(aes(date, `sum(n)`, fill = docnumber)) +
+  geom_bar(stat = "identity", alpha = .8, position = "dodge", show.legend = FALSE, fill = "tomato2")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x= "Date of Speech", y = "Total Number of Words", title = "Frequency Distribution of Other Republican Nominees' Speeches")
+```  
+
+
+Again, with six speeches between three men, we see a significant drop in overall word count and one instance of where two candidates gave speeches on the same day. I believe that this drop in word count is due to the time period these speeches were given in. Campaigning during primaries is more rally oriented than speech oriented. This is why we have fewer speeches during the early months of the campaign.
+
+
+```{r, include=FALSE}
+read_feather("corpus/Trump_Corpus.feather")
+read_feather("corpus/Clinton_Corpus.feather")
+read_feather("corpus/Sanders_Corpus.feather")
+read_feather("corpus/Repub_Corpus.feather")
+
+speech_corpus <- bind_rows(Trump_Corpus, Clinton_Corpus, Sanders_Corpus, Repub_Corpus)
+```
+##Celebratory Pauses
+
+Within the documents, there were instances of applause or chanting, so in the table below, we have the number of instances these occur within the speeches.
+
+```{r, echo=FALSE}
+speech_corpus %>%
+  group_by(author) %>%
+  filter(word == "applause" | word == "cheers")%>%
+  count() %>%
+  kable()
+```
+As stated previously, there may be instance of selection bias, and this may be one of those instances. Different scribes may have used different standards in tracking and reporting crowd behavior. However, with the results we do have, Sanders has a number of these celebratory pauses especially for the number of speeches he gave. This could be an indicator of how he was able to relate to his audience. Clinton and Trump seem to have similar numbers for the respective amount of speeches they gave. We have no data on the other Republican candidates due to the small sample size. 
+
+
+```{r, echo=FALSE}
+speech_corpus %>%
+  group_by(author, docnumber) %>%
+  filter(word == "applause" | word == "cheers") %>%
+  count(docnumber) %>%
+  mutate(docnumber = order(docnumber)) %>%
+  ggplot(aes(docnumber, n, fill = author))+
+  geom_bar(stat = "identity", alpha = .8, position = "dodge") +
+  labs(x= "Instance of Celebratory Pause", y= "Number of Celebratory Pauses", title = "Celebratory Pauses Between Candidates")
+```
+This graph shows us that there are not equal distributions among cheering. We do see that Clinton has more instances of cheering, whereas Trump and Sanders seem to have very dense instances of cheering. This either confirms the idea of selection bias pertaining to cheering, or it could be indicative of a variety of speech style that the candidates were able to use in order to elicit high energy response. We must also take into account the disruptions that would occur at Trump rallies, yet there were never instances of 10, 20, let along 50 individual disruptions at a given rally.
+
+
+##Word Size
+
+Now, we can begin to break down the individual words that candidates used. This table provides percentage and number of words of a given size by each candidate. 
+```{r, echo=FALSE}
+size <- speech_corpus %>%
+  mutate(word_szie = nchar(word)) %>%
+  group_by(author) %>%
+  count(word_szie) %>%
+  mutate(percent = n/sum(n))
+  kable(size)
+```
+
+Below is the graph for an easier visualization:
+```{r, echo=FALSE}
+size %>%
+  ggplot(aes(word_szie, percent, fill= author)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~author)
+```
+In terms of size, there is no real difference. It is interesting to visualize, but for the most part, we seem to use words with 3, 4, and 5 letters, and campaign speeches are no different. This may be in an attempt to relate and come across to the everyday-man, but it is also just the structure of our language.
