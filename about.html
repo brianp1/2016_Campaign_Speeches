@@ -4,7 +4,7 @@
 
 <head>
 
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 
@@ -20,8 +20,8 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/default.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -30,10 +30,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -87,6 +89,9 @@ img {
 }
 .tabbed-pane {
   padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
 }
 button.code-folding-btn:focus {
   outline: none;
@@ -150,14 +155,74 @@ $(document).ready(function () {
 <div class="container-fluid main-container">
 
 <!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
 <script>
 $(document).ready(function () {
   window.buildTabsets("TOC");
 });
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
 </script>
 
 <!-- code folding -->
-
 
 
 
@@ -207,7 +272,7 @@ $(document).ready(function () {
 <p>We do see that there are fundamental differences between the candidates and the rhetoric and speech style used. Whether it was the emotional and social connotation surround particular words or the topics that were used. Further research needs to occur to be able to substantially link these ideas to the outcome of the election, but it does seem plausible that what allowed Donald Trump to win the election was the significant amount of campaigning he was able to do in September and October, an emphasis on employment rhetoric, and using language that implied a sense of negativity that countered the polished appearances of the candidates he competed against. Further in his rhetoric, it seems very derisive in drawing groups and boundaries, dividing individuals and attempting to relate to each of these groups. I believe that this had the effect of a divide and conquer- type mindset. By being able to pit people against one another, he was able to then elicit certain emotions and relate particular policy to individual groups. It may be due to his years of being in the public eye, but Donald Trump was able to relate and leave a lasting impression with those he interacted with. Essentially, he was able to outperform the other candidates, and in doing so, win the election. In future research, we would like to be able to provide more systematic metrics and increase the data over multiple elections to examine any patterns that seem of rhetoric that seem essential to the outcome of a given election.</p>
 <p>I would like to acknowledge and thank those associated with the American Presidency Project (<a href="http://www.presidency.ucsb.edu/index.php" class="uri">http://www.presidency.ucsb.edu/index.php</a>) for meticulously documenting the speeches from all candidates over the course of the election.</p>
 <p>I would also like to thank those who developed the word clouds package that allowed for the beautiful word clouds that we were able to produce.</p>
-<p>If you have any questions or comments about this project, feel free to contact me at <a href="mailto:brianpennington11@gmail.com">brianpennington11@gmail.com</a></p>
+<p>If you have any questions or comments about this project, feel free to contact me at <a href="mailto:brianpennington11@gmail.com">brianpennington11@gmail.com</a>. All code and data is openly available on the followin github: <a href="https://github.com/uc-cfss/fp-brianp" class="uri">https://github.com/uc-cfss/fp-brianp</a> or <a href="https://github.com/uc-cfss/fp-brianp" class="uri">https://github.com/uc-cfss/fp-brianp</a></p>
 
 
 
@@ -232,7 +297,7 @@ $(document).ready(function () {
   (function () {
     var script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
     document.getElementsByTagName("head")[0].appendChild(script);
   })();
 </script>

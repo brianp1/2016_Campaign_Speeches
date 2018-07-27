@@ -8,6 +8,6 @@ I would like to acknowledge and thank those associated with the American Preside
 
 I would also like to thank those who developed the word clouds package that allowed for the beautiful word clouds that we were able to produce.
 
-If you have any questions or comments about this project, feel free to contact me at brianpennington11@gmail.com
-
+If you have any questions or comments about this project, feel free to contact me at brianpennington11@gmail.com. All code and data is openly available on the followin github: https://github.com/uc-cfss/fp-brianp
+ or https://github.com/uc-cfss/fp-brianp
 
