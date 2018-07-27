@@ -1,5 +1,5 @@
-# Final project
+# I Know Words, I Have The Best Words
 
-This is the repository for your final project. It is up to you to decide how to structure your files and directories. The final result will be a website created using [R Markdown](http://rmarkdown.rstudio.com/rmarkdown_websites.html).
+For the 2016 Presidential election, we scrapped and analyzed all major speeches given by the predominate candidates in the race for the Presidency. Using R, we scrapped the speeches in order to synthesize what the candidates were discussing over the course of the election and how they were expressing their ideas. Using sentiment analysis and topic modeling, we were able to explore the changes in candidates over time, as well as, the differences between the candidates. 
 
-You can see the rendered example site [here](https://uc-cfss.github.io/fp-template/).
+https://uc-cfss.github.io/fp-brianp1/
