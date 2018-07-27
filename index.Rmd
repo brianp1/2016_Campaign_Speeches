@@ -1,6 +1,6 @@
- ---
+---
 title: "I Know Words, I Have The Best Words"
-subtitle: "Textual Analysis of the 2016 Presidential Campaign Speeches by Brian Pennington"
+subtitle: Textual Analysis of the 2016 Presidential Campaign Speeches by Brian Pennington
 ---
 ```{r, include=FALSE}
 library(tidyverse)
