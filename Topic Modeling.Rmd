@@ -1,7 +1,5 @@
 ---
 title: "Topic Modeling"
-author: "Brian Pennington"
-date: "December 7, 2016"
 output: html_document
 ---
 #Topic Modeling of Candidates
@@ -41,7 +39,7 @@ In addition to understanding sentiment surrounding a word, we can also examine t
 
 ##General Topics from the 2016 Election
 
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, message= FALSE}
 word_cloud <- speech_corpus %>%
   select(word) %>%
   filter(word != "applause") %>%
@@ -138,7 +136,7 @@ top_terms2 <- speech_lda_td2 %>%
 
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=10}
 top_terms2 %>%
   mutate(term = reorder(term, beta)) %>%
   ggplot(aes(term, beta, fill = factor(topic)))+
@@ -146,7 +144,9 @@ top_terms2 %>%
   facet_wrap(~topic, scales = "free", ncol = 3)+
   coord_flip()+
   labs(x= "beta", y= "Terms within Topics", title= "Adjusted Topic Model for Entire Campaign")
+```
 
+```{r, echo=FALSE}
 
 top_terms2 %>%
   kable()
@@ -179,7 +179,7 @@ inverse_doc_freq <- speech_td %>%
   arrange(desc(tf_idf)) %>%
   mutate(word = factor(word, levels = rev(unique(word))))
 ```
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 ggplot(inverse_doc_freq[1:25,], aes(word, tf_idf, fill = author)) +
   geom_bar(alpha = 0.8, stat = "identity", scales = "free") +
   coord_flip()+
@@ -192,7 +192,7 @@ This graph shows us the highest weight words based upon use and weight. The larg
 
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 inverse_doc_freq %>%
   group_by(author) %>%
   top_n(15)%>%
@@ -210,7 +210,7 @@ With these ideas and tools, we can now model each of the candidates' topic separ
 
 
 ##Topic Modeling For Donald Trump
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, message= FALSE}
 Trump_word_cloud <- Trump_Corpus %>%
   select(word) %>%
   filter(word != "applause") %>%
@@ -262,7 +262,7 @@ trump_terms <- trump_lda_td %>%
 ```
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height= 10}
 trump_terms %>%
   mutate(term = reorder(term, beta)) %>%
   ggplot(aes(term, beta, fill = factor(topic)))+
@@ -270,7 +270,8 @@ trump_terms %>%
   facet_wrap(~topic, scales = "free", ncol = 3)+
   coord_flip()+
   labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Donald Trump")
-
+```
+```{r, echo=FALSE}
 trump_terms %>%
   kable()
   
@@ -280,7 +281,7 @@ perplexity(speech_lda)
 
 
 ##Topic Modeling For Hillary Clinton
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, message= FALSE}
 clinton_word_cloud <- Clinton_Corpus %>%
   select(word) %>%
   filter(word != "applause") %>%
@@ -336,7 +337,7 @@ clinton_terms <- clinton_lda_td %>%
 
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height= 10}
 clinton_terms %>%
   mutate(term = reorder(term, beta)) %>%
   ggplot(aes(term, beta, fill = factor(topic)))+
@@ -344,7 +345,8 @@ clinton_terms %>%
   facet_wrap(~topic, scales = "free", ncol = 3)+
   coord_flip()+
   labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Hillary Clinton")
-
+```
+```{r, echo=FALSE}
 clinton_terms %>%
   kable()
 
@@ -352,7 +354,7 @@ perplexity(clinton_lda)
 ```
 
 ##Topic Modeling For Bernie Sanders
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, message= FALSE}
 sanders_word_cloud <- Sanders_Corpus %>%
   select(word) %>%
   filter(word != "applause") %>%
@@ -408,7 +410,7 @@ sanders_terms <- sanders_lda_td %>%
 ```
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height= 10}
 sanders_terms %>%
   mutate(term = reorder(term, beta)) %>%
   ggplot(aes(term, beta, fill = factor(topic)))+
@@ -416,7 +418,9 @@ sanders_terms %>%
   facet_wrap(~topic, scales = "free", ncol = 3)+
   coord_flip()+
   labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Bernie Sanders")
+```
 
+```{r, echo=FALSE}
 sanders_terms %>%
   kable()
 
@@ -424,7 +428,7 @@ perplexity(sanders_lda)
 ```
 
 ##Topic Modeling for Other Republican Nominees
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, message= FALSE}
 repub_word_cloud <- Repub_Corpus %>%
   select(word) %>%
   filter(word != "applause") %>%
@@ -480,7 +484,7 @@ repub_terms <- repub_lda_td %>%
 ```
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height= 10}
 repub_terms%>%
   mutate(term = reorder(term, beta)) %>%
   ggplot(aes(term, beta, fill = factor(topic)))+
@@ -488,7 +492,9 @@ repub_terms%>%
   facet_wrap(~topic, scales = "free")+
   coord_flip()+
   labs(x= "beta", y= "Terms within Topics", title= "Topic Model for Other Republican Nominees")
+```
 
+```{r, echo=FALSE}
 repub_terms %>%
   kable()
 
